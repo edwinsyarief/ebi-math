@@ -3,8 +3,8 @@ module github.com/edwinsyarief/ebi-math
 go 1.23.4
 
 require (
-	github.com/hajimehoshi/ebiten/v2 v2.8.5
-	golang.org/x/exp v0.0.0-20241210194714-1829a127f884
+	github.com/hajimehoshi/ebiten/v2 v2.8.6
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67
 )
 
 require (
