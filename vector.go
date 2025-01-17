@@ -165,7 +165,7 @@ func (self Vector) DirectionTo(other Vector) Vector {
 func (self Vector) VecTowards(other Vector, length float64) Vector {
 	angle := self.AngleToPoint(other)
 	result := Vector{X: math.Cos(angle), Y: math.Sin(angle)}
-	return result.Mulf(length)
+	return result.MulF(length)
 }
 
 func (self Vector) MoveTowards(other Vector, length float64) Vector {
@@ -174,7 +174,7 @@ func (self Vector) MoveTowards(other Vector, length float64) Vector {
 	if dist <= length || dist < Epsilon {
 		return other
 	}
-	return self.Add(direction.Divf(dist).Mulf(length))
+	return self.Add(direction.DivF(dist).MulF(length))
 }
 
 func (self Vector) EqualsApproximately(other Vector) bool {
@@ -192,7 +192,7 @@ func (self Vector) MoveInDirection(dist, dir float64) Vector {
 	}
 }
 
-func (self Vector) Mulf(scalar float64) Vector {
+func (self Vector) MulF(scalar float64) Vector {
 	return Vector{
 		X: self.X * scalar,
 		Y: self.Y * scalar,
@@ -206,7 +206,7 @@ func (self Vector) Mul(other Vector) Vector {
 	}
 }
 
-func (self Vector) Divf(scalar float64) Vector {
+func (self Vector) DivF(scalar float64) Vector {
 	return Vector{
 		X: self.X / scalar,
 		Y: self.Y / scalar,
@@ -229,7 +229,7 @@ func (self Vector) Add(others ...Vector) Vector {
 	return self
 }
 
-func (self Vector) Addf(scalar float64) Vector {
+func (self Vector) AddF(scalar float64) Vector {
 	self.X += scalar
 	self.Y += scalar
 
@@ -245,7 +245,7 @@ func (self Vector) Sub(others ...Vector) Vector {
 	return self
 }
 
-func (self Vector) Subf(scalar float64) Vector {
+func (self Vector) SubF(scalar float64) Vector {
 	self.X -= scalar
 	self.Y -= scalar
 
@@ -259,7 +259,7 @@ func (self Vector) Subf(scalar float64) Vector {
 func (self Vector) Normalized() Vector {
 	l := self.LengthSquared()
 	if l != 0 {
-		return self.Mulf(1 / math.Sqrt(l))
+		return self.MulF(1 / math.Sqrt(l))
 	}
 	return self
 }
@@ -276,8 +276,8 @@ func (self Vector) FastNormalize() Vector {
 func (self Vector) ClampLength(limit float64) Vector {
 	l := self.Length()
 	if l > 0 && l > limit {
-		self = self.Divf(l)
-		self = self.Mulf(limit)
+		self = self.DivF(l)
+		self = self.MulF(limit)
 	}
 	return self
 }
