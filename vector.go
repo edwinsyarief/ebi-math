@@ -403,3 +403,10 @@ func (self Vector) Reflect(other Vector) Vector {
 func (self Vector) ReflectN(axis Vector) Vector {
 	return self.ProjectN(axis).ScaleF(2).Sub(self)
 }
+
+func (self Vector) AdjustPixel() Vector {
+	return V(
+		float64(AdjustDestinationPixel(float32(self.X))),
+		float64(AdjustDestinationPixel(float32(self.Y))),
+	)
+}
