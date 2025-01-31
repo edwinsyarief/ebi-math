@@ -5,27 +5,11 @@ type Transformer interface {
 	GetTransform() *Transform
 }
 
-// The structure represents basic transformation
-// features: positioning, rotating and scaling.
 type Transform struct {
-	// Absolute (if no parent) position and
-	// the scale.
-	position, scale Vector
-	// The object rotation in radians.
-	rotation float64
-	// The not scaled offset vector from upper left corner
-	// which the object should be rotated around.
-	offset Vector
-	// origin offset (camera relative position)
-	origin Vector
-
-	// If is not nil then the upper values will be relational to
-	// the parent ones.
-	parent *Transform
-
-	// Dirty is true if we anyhow changed matrix.
-	dirty, parentDirty bool
-
+	position, scale, offset, origin      Vector
+	rotation                             float64
+	parent                               *Transform
+	dirty, parentDirty                   bool
 	matrix, parentMatrix, parentInverted Matrix
 }
 
@@ -33,34 +17,23 @@ func (self *Transform) GetParentTransform() *Transform {
 	return self.parent
 }
 
+// GetInitialParentTransform finds the topmost parent in the hierarchy.
 func (self *Transform) GetInitialParentTransform() *Transform {
-	parent := self.GetParentTransform()
-
-	for parent != nil {
-		nextParent := parent.GetParentTransform()
-		if nextParent == nil {
-			break
-		}
-		parent = nextParent
+	for self.parent != nil {
+		self = self.parent
 	}
-
-	return parent
+	return self
 }
 
-// For implementing the Transformer on embedding.
 func (self *Transform) GetTransform() *Transform {
 	return self
 }
 
-// Returns the default Transform structure.
+// T creates a new Transform with default values.
 func T() *Transform {
-	ret := &Transform{
-		position: V2(0),
-		scale:    V2(1),
-		offset:   V2(0.0),
-		rotation: 0.0,
+	return &Transform{
+		scale: V2(1),
 	}
-	return ret
 }
 
 func (self *Transform) Origin() Vector {
@@ -77,30 +50,28 @@ func (self *Transform) IsDirty() bool {
 	return self.dirty || self.parentDirty
 }
 
-// Set the absolute object position.
+// SetPosition updates the position, considering parent transforms.
 func (self *Transform) SetPosition(position Vector) {
 	self.dirty = true
 	self.parentDirty = true
 	if self.parent != nil {
 		_, mi := self.parent.MatrixForParenting()
 		self.position = position.Apply(mi)
-		return
+	} else {
+		self.position = position
 	}
-	self.position = position
 }
 
-// Set the absolute object rotation.
 func (self *Transform) SetRotation(rotation float64) {
 	self.dirty = true
 	self.parentDirty = true
 	if self.parent != nil {
 		self.rotation -= self.parent.Rotation()
-		return
+	} else {
+		self.rotation = rotation
 	}
-	self.rotation = rotation
 }
 
-// Set the absolute object scale.
 func (self *Transform) SetScale(scale Vector) {
 	self.dirty = true
 	self.parentDirty = true
@@ -119,31 +90,28 @@ func (self *Transform) SetOffset(offset Vector) {
 	self.offset = offset
 }
 
-// Get the absolute representation of the transform.
+// Abs returns an absolute transform without considering parents.
 func (self *Transform) Abs() Transform {
 	if self.parent == nil {
 		return *self
 	}
-
-	ret := *T()
-	ret.position = self.Position()
-	ret.rotation = self.Rotation()
-	ret.origin = self.Origin()
-	ret.scale = self.Scale()
-	ret.offset = self.Offset()
-	ret.dirty = true
-	ret.parentDirty = true
-
-	return ret
+	abs := *T()
+	abs.position = self.Position()
+	abs.rotation = self.Rotation()
+	abs.origin = self.Origin()
+	abs.scale = self.Scale()
+	abs.offset = self.Offset()
+	abs.dirty = true
+	abs.parentDirty = true
+	return abs
 }
 
 func (self *Transform) Rel() Transform {
-	ret := *self
-	ret.parent = nil
-	return ret
+	rel := *self
+	rel.parent = nil
+	return rel
 }
 
-// Get the absolute object position.
 func (self *Transform) Position() Vector {
 	if self.parent == nil {
 		return self.position
@@ -156,12 +124,10 @@ func (self *Transform) Move(v ...Vector) {
 	self.SetPosition(self.Position().Add(v...))
 }
 
-// Get the absolute object scale.
 func (self *Transform) Scale() Vector {
 	return self.scale
 }
 
-// Get the absolute object rotation.
 func (self *Transform) Rotation() float64 {
 	if self.parent == nil {
 		return self.rotation
@@ -174,40 +140,36 @@ func (self *Transform) Rotate(rotation float64) {
 	self.parentDirty = true
 	self.rotation += rotation
 }
+
 func (self *Transform) Offset() Vector {
 	return self.offset
 }
 
-// Returns true if the object is connected
-// to some parent.
 func (self *Transform) Connected() bool {
 	return self.parent != nil
 }
 
 func (self *Transform) Replace(new Transformer) {
-	self.SetPosition(new.GetTransform().Position())
-	self.SetOffset(new.GetTransform().Offset())
-	self.SetRotation(new.GetTransform().Rotation())
-	self.SetOrigin(new.GetTransform().Origin())
+	nt := new.GetTransform()
+	self.SetPosition(nt.Position())
+	self.SetOffset(nt.Offset())
+	self.SetRotation(nt.Rotation())
+	self.SetOrigin(nt.Origin())
 }
 
-// Connect the object to another one making it its parent.
+// Connect establishes a parent-child relationship.
 func (self *Transform) Connect(parent Transformer) {
 	if parent == nil {
 		return
 	}
-	if self.parent != nil {
-		self.Disconnect()
-	}
-
 	self.parent = parent.GetTransform()
-	self.SetPosition(self.Position()) // Update position based on new parent
-	self.SetRotation(self.Rotation()) // Update rotation based on new parent
-	self.SetScale(self.Scale())       // Maintain scale
-	self.SetOffset(self.Offset())     // Maintain offset
+	self.SetPosition(self.Position())
+	self.SetRotation(self.Rotation())
+	self.SetScale(self.Scale())
+	self.SetOffset(self.Offset())
 }
 
-// Disconnect from the parent.
+// Disconnect removes the parent relationship, making the transform absolute.
 func (self *Transform) Disconnect() {
 	if self.parent == nil {
 		return
@@ -215,76 +177,49 @@ func (self *Transform) Disconnect() {
 	*self = self.Abs()
 }
 
-// Return the matrix and the inverted one for parenting children.
+// MatrixForParenting returns matrices for child positioning.
 func (self *Transform) MatrixForParenting() (Matrix, Matrix) {
-	var m, mi Matrix
 	if self.parentDirty {
-		// Scale first.
-		m.Scale(self.scale.X, self.scale.Y)
-		// Then move and rotate.
-		m.Translate(
-			-self.offset.X*self.scale.X,
-			-self.offset.Y*self.scale.Y,
-		)
-		m.Rotate(float64(self.rotation))
-		m.Translate(self.position.X, self.position.Y)
-		self.parentMatrix = m
+		self.parentMatrix = Matrix{}
+		self.parentMatrix.Scale(self.scale.X, self.scale.Y)
+		self.parentMatrix.Translate(-self.offset.X*self.scale.X, -self.offset.Y*self.scale.Y)
+		self.parentMatrix.Rotate(self.rotation)
+		self.parentMatrix.Translate(self.position.X, self.position.Y)
 
-		mi = m
-		mi.Invert()
-		self.parentInverted = mi
-
+		// Store inverted matrix for efficiency
+		self.parentInverted = self.parentMatrix
+		self.parentInverted.Invert()
 		self.parentDirty = false
-	} else {
-		m = self.parentMatrix
-		mi = self.parentInverted
 	}
 
+	m, mi := self.parentMatrix, self.parentInverted
 	if self.parent != nil {
 		pm, pmi := self.parent.MatrixForParenting()
 		m.Concat(pm)
-		pmi.Concat(mi)
 		mi = pmi
+		mi.Concat(self.parentInverted)
 	}
-
 	return m, mi
-
 }
 
-// Returns the GeoM with corresponding
-// to the transfrom transformation.
+// Matrix computes the transformation matrix for this node.
 func (self *Transform) Matrix() Matrix {
-	var m, pm Matrix
-
-	// Calculating only if we changed the structure anyhow.
 	if self.dirty {
-		// Scale first.
-		m.Scale(self.scale.X, self.scale.Y)
-		// Then move and rotate.
-		m.Translate(
-			-self.offset.X*self.scale.X,
-			-self.offset.Y*self.scale.Y,
-		)
-		m.Rotate(float64(self.rotation))
-		// Then move to the absolute position.
-		m.Translate(self.position.X, self.position.Y)
-
-		// And finally move to the origin offset
+		self.matrix = Matrix{}
+		self.matrix.Scale(self.scale.X, self.scale.Y)
+		self.matrix.Translate(-self.offset.X*self.scale.X, -self.offset.Y*self.scale.Y)
+		self.matrix.Rotate(self.rotation)
+		self.matrix.Translate(self.position.X, self.position.Y)
 		if !self.origin.IsZero() {
-			m.Translate(-self.origin.X, -self.origin.Y)
+			self.matrix.Translate(-self.origin.X, -self.origin.Y)
 		}
-
-		self.matrix = m
-
 		self.dirty = false
-	} else {
-		m = self.matrix
 	}
 
+	m := self.matrix
 	if self.parent != nil {
-		pm, _ = self.parent.MatrixForParenting()
+		pm, _ := self.parent.MatrixForParenting()
 		m.Concat(pm)
 	}
-
 	return m
 }
