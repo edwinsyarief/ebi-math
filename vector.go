@@ -185,14 +185,51 @@ func (self Vector) SubF(scalar float64) Vector {
 	return self
 }
 
+// Mul multiplies the Vector by another Vector component-wise.
+func (self Vector) Mul(other Vector) Vector {
+	self.X *= other.X
+	self.Y *= other.Y
+	return self
+}
+
 // MulF multiplies the Vector by a scalar.
 func (self Vector) MulF(scalar float64) Vector {
 	return V(self.X*scalar, self.Y*scalar)
 }
 
+// Div divides the Vector by another Vector component-wise.
+func (self Vector) Div(other Vector) Vector {
+	self.X /= other.X
+	self.Y /= other.Y
+	return self
+}
+
 // DivF divides the Vector by a scalar.
 func (self Vector) DivF(scalar float64) Vector {
 	return V(self.X/scalar, self.Y/scalar)
+}
+
+// Scale scales the Vector by another Vector component-wise.
+func (self Vector) Scale(other Vector) Vector {
+	self.X *= other.X
+	self.Y *= other.Y
+	return self
+}
+
+// ScaleF scales the Vector by a scalar.
+func (self Vector) ScaleF(scalar float64) Vector {
+	self.X *= scalar
+	self.Y *= scalar
+	return self
+}
+
+// Unit returns a unit vector in the same direction as this Vector.
+func (self Vector) Unit() Vector {
+	l := self.Length()
+	if l != 0 {
+		return self.DivF(l)
+	}
+	return self
 }
 
 // Normalized returns a unit vector in the same direction as this Vector.
@@ -211,6 +248,16 @@ func (self Vector) ClampLength(limit float64) Vector {
 		return self.DivF(l).MulF(limit)
 	}
 	return self
+}
+
+// Round returns a new Vector with each component rounded to the nearest integer.
+func (self Vector) Round() Vector {
+	return V(math.Round(self.X), math.Round(self.Y))
+}
+
+// MoveInDirection moves the Vector in the direction of the angle by a given distance.
+func (self Vector) MoveInDirection(angle, distance float64) Vector {
+	return self.Add(V(math.Cos(angle), math.Sin(angle)).MulF(distance))
 }
 
 // Equals checks if two Vectors are equal within a small tolerance.
