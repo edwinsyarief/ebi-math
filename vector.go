@@ -151,6 +151,11 @@ func (self Vector) MoveTowards(other Vector, length float64) Vector {
 	return self.Add(direction.DivF(dist).MulF(length))
 }
 
+// Invert returns a new Vector with both components negated.
+func (self Vector) Invert() Vector {
+	return V(-self.X, -self.Y)
+}
+
 // Vector Math Operations
 // ----------------------
 // Add adds one or more Vectors to this Vector.
