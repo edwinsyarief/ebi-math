@@ -255,6 +255,16 @@ func (self Vector) Round() Vector {
 	return V(math.Round(self.X), math.Round(self.Y))
 }
 
+// Floor returns a new Vector with each component rounded down to the nearest integer.
+func (self Vector) Floor() Vector {
+	return V(math.Floor(self.X), math.Floor(self.Y))
+}
+
+// Ceil returns a new Vector with each component rounded up to the nearest integer.
+func (self Vector) Ceil() Vector {
+	return V(math.Ceil(self.X), math.Ceil(self.Y))
+}
+
 // MoveInDirection moves the Vector in the direction of the angle by a given distance.
 func (self Vector) MoveInDirection(angle, distance float64) Vector {
 	return self.Add(V(math.Cos(angle), math.Sin(angle)).MulF(distance))
