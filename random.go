@@ -8,72 +8,89 @@ import (
 	"golang.org/x/exp/rand"
 )
 
+// Rand provides methods for generating random numbers with various distributions.
 type Rand struct {
 	rng *rand.Rand
 }
 
+// Random creates a new random number generator with the current time as seed.
 func Random() *Rand {
 	return RandomWidthSeed(time.Now().UnixNano())
 }
 
+// RandomWidthSeed initializes a random number generator with a specific seed.
 func RandomWidthSeed(seed int64) *Rand {
-	result := &Rand{}
-	result.SetSeed(seed)
-	return result
+	return &Rand{
+		rng: rand.New(rand.NewSource(uint64(seed))),
+	}
 }
 
+// SetSeed sets the seed for the random number generator, allowing for reproducible randomness.
 func (self *Rand) SetSeed(seed int64) {
 	self.rng = rand.New(rand.NewSource(uint64(seed)))
 }
 
+// Offset generates a random Vector within the given range for both X and Y components.
 func (self *Rand) Offset(min, max float64) Vector {
 	return Vector{X: self.FloatRange(min, max), Y: self.FloatRange(min, max)}
 }
 
+// Chance returns true with the given probability, false otherwise.
 func (self *Rand) Chance(probability float64) bool {
 	return self.rng.Float64() <= probability
 }
 
+// Bool returns a random boolean value where true has a 50% chance.
 func (self *Rand) Bool() bool {
 	return self.rng.Float64() < 0.5
 }
 
+// IntRange generates a random integer within the range [min, max].
 func (self *Rand) IntRange(min, max int) int {
 	return min + self.rng.Intn(max-min+1)
 }
 
+// PositiveInt64 returns a non-negative random int64.
 func (self *Rand) PositiveInt64() int64 {
 	return self.rng.Int63()
 }
 
+// PositiveInt returns a non-negative random int.
 func (self *Rand) PositiveInt() int {
 	return self.rng.Int()
 }
 
+// Uint64 returns a random uint64 value.
 func (self *Rand) Uint64() uint64 {
 	return self.rng.Uint64()
 }
 
+// Float64 returns a random float64 in the range [0.0, 1.0).
 func (self *Rand) Float64() float64 {
 	return self.rng.Float64()
 }
 
+// NextFloat64 returns a random float64 in the range [0.0, max).
 func (self *Rand) NextFloat64(max float64) float64 {
 	return self.rng.Float64() * max
 }
 
+// FloatRange returns a random float64 within the specified range [min, max).
 func (self *Rand) FloatRange(min, max float64) float64 {
 	return min + self.rng.Float64()*(max-min)
 }
 
+// Rad returns a random angle in radians within the range [0, 2π).
 func (self *Rand) Rad() float64 {
 	return self.FloatRange(0, 2*math.Pi)
 }
 
+// VectorRange returns a random Vector within the specified range for both X and Y.
 func (self *Rand) VectorRange(min, max Vector) Vector {
 	return min.Add(V(self.NextFloat64(max.X-min.X), self.NextFloat64(max.Y-min.Y)))
 }
 
+// RandomIndex selects a random index from a slice. Returns -1 if the slice is empty.
 func RandomIndex[T any](r *Rand, slice []T) int {
 	if len(slice) == 0 {
 		return -1
@@ -81,6 +98,7 @@ func RandomIndex[T any](r *Rand, slice []T) int {
 	return r.IntRange(0, len(slice)-1)
 }
 
+// RandomElement selects a random element from the slice. Returns the zero value if the slice is empty.
 func RandomElement[T any](r *Rand, slice []T) (element T) {
 	if len(slice) == 0 {
 		return element // Zero value
@@ -91,18 +109,20 @@ func RandomElement[T any](r *Rand, slice []T) (element T) {
 	return slice[RandomIndex(r, slice)]
 }
 
+// RandomChoose selects a random element from the provided elements.
 func RandomChoose[T any](r *Rand, elements ...T) (element T) {
 	return RandomElement(r, elements)
 }
 
+// RandomShuffle shuffles the elements of the slice in place.
 func RandomShuffle[T any](r *Rand, slice []T) {
 	r.rng.Shuffle(len(slice), func(i, j int) {
 		slice[i], slice[j] = slice[j], slice[i]
 	})
 }
 
-// RandPicker performs a uniformly distributed random probing among the given objects with weights.
-// Higher the weight, higher the chance of that object of being picked.
+// RandPicker for weighted random selection
+// ---------------------------------------
 type RandPicker[T any] struct {
 	r *Rand
 
@@ -120,16 +140,17 @@ type randPickerKey struct {
 
 type randPickerKeySlice []randPickerKey
 
-func (self *randPickerKeySlice) Len() int { return len(*self) }
-func (self *randPickerKeySlice) Less(i, j int) bool {
-	return (*self)[i].threshold < (*self)[j].threshold
-}
-func (self *randPickerKeySlice) Swap(i, j int) { (*self)[i], (*self)[j] = (*self)[j], (*self)[i] }
+// Implement sort.Interface for randPickerKeySlice
+func (self randPickerKeySlice) Len() int           { return len(self) }
+func (self randPickerKeySlice) Less(i, j int) bool { return self[i].threshold < self[j].threshold }
+func (self randPickerKeySlice) Swap(i, j int)      { self[i], self[j] = self[j], self[i] }
 
+// RandomPicker creates a new RandPicker with the given random number generator.
 func RandomPicker[T any](r *Rand) *RandPicker[T] {
 	return &RandPicker[T]{r: r}
 }
 
+// Reset clears all options from the picker, resetting it to an empty state.
 func (self *RandPicker[T]) Reset() {
 	self.keys = self.keys[:0]
 	self.values = self.values[:0]
@@ -137,6 +158,7 @@ func (self *RandPicker[T]) Reset() {
 	self.sorted = false
 }
 
+// AddOption adds a new option to the picker with the given weight for selection probability.
 func (self *RandPicker[T]) AddOption(value T, weight float64) {
 	if weight == 0 {
 		return // Zero probability in any case
@@ -150,16 +172,19 @@ func (self *RandPicker[T]) AddOption(value T, weight float64) {
 	self.sorted = false
 }
 
+// AddOptions adds multiple options to the picker, each with a default weight of 1.
 func (self *RandPicker[T]) AddOptions(values ...T) {
 	for _, val := range values {
 		self.AddOption(val, 1)
 	}
 }
 
+// IsEmpty checks if there are no options in the picker.
 func (self *RandPicker[T]) IsEmpty() bool {
-	return len(self.values) != 0
+	return len(self.values) == 0
 }
 
+// Pick selects a random option based on the weights provided. If no options exist, returns the zero value.
 func (self *RandPicker[T]) Pick() T {
 	var result T
 	if len(self.values) == 0 {
@@ -169,8 +194,7 @@ func (self *RandPicker[T]) Pick() T {
 		return self.values[0]
 	}
 
-	// In a normal use case the random picker is initialized and then used
-	// without adding extra options, so this sorting will happen only once in that case.
+	// Sort keys if not already sorted
 	if !self.sorted {
 		sort.Sort(&self.keys)
 		self.sorted = true

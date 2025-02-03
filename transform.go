@@ -1,10 +1,12 @@
 package ebimath
 
+// Transformer defines the interface for objects that can have transforms.
 type Transformer interface {
 	GetParentTransform() *Transform
 	GetTransform() *Transform
 }
 
+// Transform represents a transformation in 2D space with position, scale, rotation, and parent information.
 type Transform struct {
 	position, scale, offset, origin      Vector
 	rotation                             float64
@@ -13,6 +15,18 @@ type Transform struct {
 	matrix, parentMatrix, parentInverted Matrix
 }
 
+// Constructors
+// ------------
+// T creates a new Transform with default values.
+func T() *Transform {
+	return &Transform{
+		scale: V2(1),
+	}
+}
+
+// Methods for Parent Hierarchy
+// ----------------------------
+// GetParentTransform returns the parent Transform or nil if there is no parent.
 func (self *Transform) GetParentTransform() *Transform {
 	return self.parent
 }
@@ -25,17 +39,13 @@ func (self *Transform) GetInitialParentTransform() *Transform {
 	return self
 }
 
+// GetTransform returns this Transform.
 func (self *Transform) GetTransform() *Transform {
 	return self
 }
 
-// T creates a new Transform with default values.
-func T() *Transform {
-	return &Transform{
-		scale: V2(1),
-	}
-}
-
+// Transformation Properties
+// -------------------------
 func (self *Transform) Origin() Vector {
 	return self.origin
 }
@@ -50,7 +60,9 @@ func (self *Transform) IsDirty() bool {
 	return self.dirty || self.parentDirty
 }
 
-// SetPosition updates the position, considering parent transforms.
+// Position and Movement
+// ---------------------
+// SetPosition updates the position, considering parent transforms if applicable.
 func (self *Transform) SetPosition(position Vector) {
 	self.dirty = true
 	self.parentDirty = true
@@ -62,6 +74,20 @@ func (self *Transform) SetPosition(position Vector) {
 	}
 }
 
+func (self *Transform) Position() Vector {
+	if self.parent == nil {
+		return self.position
+	}
+	pm, _ := self.parent.MatrixForParenting()
+	return self.position.Apply(pm)
+}
+
+func (self *Transform) Move(v ...Vector) {
+	self.SetPosition(self.Position().Add(v...))
+}
+
+// Rotation
+// --------
 func (self *Transform) SetRotation(rotation float64) {
 	self.dirty = true
 	self.parentDirty = true
@@ -72,10 +98,29 @@ func (self *Transform) SetRotation(rotation float64) {
 	}
 }
 
+func (self *Transform) Rotation() float64 {
+	if self.parent == nil {
+		return self.rotation
+	}
+	return self.rotation + self.parent.Rotation()
+}
+
+func (self *Transform) Rotate(rotation float64) {
+	self.dirty = true
+	self.parentDirty = true
+	self.rotation += rotation
+}
+
+// Scale
+// -----
 func (self *Transform) SetScale(scale Vector) {
 	self.dirty = true
 	self.parentDirty = true
 	self.scale = scale
+}
+
+func (self *Transform) Scale() Vector {
+	return self.scale
 }
 
 func (self *Transform) AddScale(add ...Vector) {
@@ -84,12 +129,20 @@ func (self *Transform) AddScale(add ...Vector) {
 	self.scale = self.scale.Add(add...)
 }
 
+// Offset
+// ------
 func (self *Transform) SetOffset(offset Vector) {
 	self.dirty = true
 	self.parentDirty = true
 	self.offset = offset
 }
 
+func (self *Transform) Offset() Vector {
+	return self.offset
+}
+
+// Transform Modifiers
+// -------------------
 // Abs returns an absolute transform without considering parents.
 func (self *Transform) Abs() Transform {
 	if self.parent == nil {
@@ -112,39 +165,8 @@ func (self *Transform) Rel() Transform {
 	return rel
 }
 
-func (self *Transform) Position() Vector {
-	if self.parent == nil {
-		return self.position
-	}
-	pm, _ := self.parent.MatrixForParenting()
-	return self.position.Apply(pm)
-}
-
-func (self *Transform) Move(v ...Vector) {
-	self.SetPosition(self.Position().Add(v...))
-}
-
-func (self *Transform) Scale() Vector {
-	return self.scale
-}
-
-func (self *Transform) Rotation() float64 {
-	if self.parent == nil {
-		return self.rotation
-	}
-	return self.rotation + self.parent.Rotation()
-}
-
-func (self *Transform) Rotate(rotation float64) {
-	self.dirty = true
-	self.parentDirty = true
-	self.rotation += rotation
-}
-
-func (self *Transform) Offset() Vector {
-	return self.offset
-}
-
+// Parent Management
+// -----------------
 func (self *Transform) Connected() bool {
 	return self.parent != nil
 }
@@ -177,6 +199,8 @@ func (self *Transform) Disconnect() {
 	*self = self.Abs()
 }
 
+// Matrix Operations
+// -----------------
 // MatrixForParenting returns matrices for child positioning.
 func (self *Transform) MatrixForParenting() (Matrix, Matrix) {
 	if self.parentDirty {
