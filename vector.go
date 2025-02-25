@@ -11,6 +11,19 @@ type Vector struct {
 	X, Y float64
 }
 
+var (
+	// ZeroVector represents a Vector at the origin (0, 0).
+	ZeroVector = V2(0)
+	// Right represents a unit vector pointing to the right (1, 0).
+	Right = V(1, 0)
+	// Left represents a unit vector pointing to the left (-1, 0).
+	Left = Right.Invert()
+	// Up represents a unit vector pointing up (0, 1).
+	Up = V(0, 1)
+	// Down represents a unit vector pointing down (0, -1).
+	Down = Up.Invert()
+)
+
 // Constructor functions for Vector
 // --------------------------------
 // V creates a new Vector with given x and y coordinates.
