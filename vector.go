@@ -250,9 +250,24 @@ func (self Vector) Normalized() Vector {
 func (self Vector) ClampLength(limit float64) Vector {
 	l := self.Length()
 	if l > 0 && l > limit {
-		return self.DivF(l).MulF(limit)
+		return self.Unit().ScaleF(limit)
 	}
 	return self
+}
+
+// AddMagnitude adds magnitude to the Vector in the direction it's already pointing.
+func (vec Vector) AddLength(length float64) Vector {
+	return vec.Add(vec.Unit().ScaleF(length))
+}
+
+// SubLength subtracts the given magnitude from the Vector's existing magnitude.
+// If the vector's magnitude is less than the given magnitude to subtract, a zero-length Vector will be returned.
+func (vec Vector) SubLength(limit float64) Vector {
+	if vec.Length() > limit {
+		return vec.Sub(vec.Unit().ScaleF(limit))
+	}
+	return Vector{0, 0}
+
 }
 
 // Round returns a new Vector with each component rounded to the nearest integer.
