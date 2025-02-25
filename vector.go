@@ -294,3 +294,9 @@ func (self Vector) MoveInDirection(angle, distance float64) Vector {
 func (self Vector) Equals(other Vector) bool {
 	return self.Sub(other).LengthSquared() < 0.00000000009
 }
+
+// Reflect reflects the vector against the given surface normal.
+func (vec Vector) Reflect(normal Vector) Vector {
+	n := normal.Unit()
+	return vec.Sub(n.ScaleF(2 * n.Dot(vec)))
+}
