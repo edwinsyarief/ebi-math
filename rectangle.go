@@ -93,7 +93,7 @@ func (r Rectangle) Intersects(other Rectangle) bool {
 }
 
 // IntersectsCircle checks if the rectangle intersects with a circle.
-func (r Rectangle) IntersectsCircle(center ebimath.Vector, radius float64) bool {
+func (r Rectangle) IntersectsCircle(center Vector, radius float64) bool {
 	closestX := math.Max(r.Min.X, math.Min(center.X, r.Max.X))
 	closestY := math.Max(r.Min.Y, math.Min(center.Y, r.Max.Y))
 	dx := center.X - closestX
