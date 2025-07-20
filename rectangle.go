@@ -92,6 +92,15 @@ func (r Rectangle) Intersects(other Rectangle) bool {
 	return true
 }
 
+// IntersectsCircle checks if the rectangle intersects with a circle.
+func (r Rectangle) IntersectsCircle(center ebimath.Vector, radius float64) bool {
+	closestX := math.Max(r.Min.X, math.Min(center.X, r.Max.X))
+	closestY := math.Max(r.Min.Y, math.Min(center.Y, r.Max.Y))
+	dx := center.X - closestX
+	dy := center.Y - closestY
+	return dx*dx+dy*dy <= radius*radius
+}
+
 // Helper methods for intersection calculation
 // -------------------------------------------
 // GetAxis returns one of the two axes of the rectangle based on its angle.
