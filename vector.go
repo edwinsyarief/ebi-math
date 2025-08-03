@@ -5,8 +5,7 @@ import (
 	"math"
 )
 
-// Vector represents a 2D vector with X and Y components using float64 for precision.
-// This structure is inspired by Godot's Vector2 but adapted for Go conventions.
+// Vector represents a 2D vector with X and Y components.
 type Vector struct {
 	X, Y float64
 }
@@ -24,8 +23,6 @@ var (
 	Down = Up.Invert()
 )
 
-// Constructor functions for Vector
-// --------------------------------
 // V creates a new Vector with given x and y coordinates.
 func V(x, y float64) Vector {
 	return Vector{X: x, Y: y}
@@ -46,8 +43,6 @@ func V2Int(v int) Vector {
 	return V2(float64(v))
 }
 
-// Basic Vector Operations
-// -----------------------
 // String returns a string representation of the Vector.
 func (self Vector) String() string {
 	return fmt.Sprintf("[%f, %f]", self.X, self.Y)
@@ -73,20 +68,17 @@ func (self Vector) ToInt() (int, int) {
 	return int(self.X), int(self.Y)
 }
 
-// Vector Transformations
-// ----------------------
 // Apply applies a matrix transformation to this Vector.
 func (self Vector) Apply(m Matrix) Vector {
 	x, y := m.Apply(self.X, self.Y)
 	return V(x, y)
 }
 
-// Rotate rotates the Vector by degrees.
+// RotateDegrees rotates the Vector by degrees.
 func (self Vector) RotateDegrees(degrees float64) Vector {
 	degrees = Repeat(degrees, 360) // Normalize angle
 	radians := degrees * (Pi / 180)
-	sine, cosine := math.Sin(radians), math.Cos(radians)
-	return V(self.X*cosine-self.Y*sine, self.X*sine+self.Y*cosine)
+	return self.Rotate(radians)
 }
 
 // Rotate rotates the Vector by the given angle in radians.
@@ -103,14 +95,12 @@ func (self Vector) RotateAround(around Vector, angle float64) Vector {
 	)
 }
 
-// Vector Calculations
-// -------------------
 // DistanceTo calculates the Euclidean distance to another Vector.
 func (self Vector) DistanceTo(v2 Vector) float64 {
 	return math.Sqrt(self.DistanceSquaredTo(v2))
 }
 
-// DistanceSquaredTo computes the squared distance to another Vector, which is faster for comparisons.
+// DistanceSquaredTo computes the squared distance to another Vector.
 func (self Vector) DistanceSquaredTo(v2 Vector) float64 {
 	dx, dy := self.X-v2.X, self.Y-v2.Y
 	return dx*dx + dy*dy
@@ -126,13 +116,11 @@ func (self Vector) Length() float64 {
 	return math.Sqrt(self.LengthSquared())
 }
 
-// LengthSquared returns the square of the Vector's length, useful for comparisons.
+// LengthSquared returns the square of the Vector's length.
 func (self Vector) LengthSquared() float64 {
 	return self.Dot(self)
 }
 
-// Additional Vector Operations
-// ----------------------------
 // Angle returns the angle of the Vector from the positive X-axis in radians.
 func (self Vector) Angle() float64 {
 	return math.Atan2(self.Y, self.X)
@@ -169,85 +157,64 @@ func (self Vector) Invert() Vector {
 	return V(-self.X, -self.Y)
 }
 
-// Vector Math Operations
-// ----------------------
-// Add adds one or more Vectors to this Vector.
+// Add adds one or more Vectors to this Vector, returning a new Vector.
 func (self Vector) Add(others ...Vector) Vector {
+	result := self
 	for _, r := range others {
-		self.X += r.X
-		self.Y += r.Y
+		result.X += r.X
+		result.Y += r.Y
 	}
-	return self
+	return result
 }
 
-// AddF adds a scalar to both components of the Vector.
+// AddF adds a scalar to both components of the Vector, returning a new Vector.
 func (self Vector) AddF(scalar float64) Vector {
-	self.X += scalar
-	self.Y += scalar
-	return self
+	return V(self.X+scalar, self.Y+scalar)
 }
 
-// Sub subtracts one or more Vectors from this Vector.
+// Sub subtracts one or more Vectors from this Vector, returning a new Vector.
 func (self Vector) Sub(others ...Vector) Vector {
+	result := self
 	for _, r := range others {
-		self.X -= r.X
-		self.Y -= r.Y
+		result.X -= r.X
+		result.Y -= r.Y
 	}
-	return self
+	return result
 }
 
-// SubF subtracts a scalar from both components of the Vector.
+// SubF subtracts a scalar from both components of the Vector, returning a new Vector.
 func (self Vector) SubF(scalar float64) Vector {
-	self.X -= scalar
-	self.Y -= scalar
-	return self
+	return V(self.X-scalar, self.Y-scalar)
 }
 
-// Mul multiplies the Vector by another Vector component-wise.
+// Mul multiplies the Vector by another Vector component-wise, returning a new Vector.
 func (self Vector) Mul(other Vector) Vector {
-	self.X *= other.X
-	self.Y *= other.Y
-	return self
+	return V(self.X*other.X, self.Y*other.Y)
 }
 
-// MulF multiplies the Vector by a scalar.
+// MulF multiplies the Vector by a scalar, returning a new Vector.
 func (self Vector) MulF(scalar float64) Vector {
 	return V(self.X*scalar, self.Y*scalar)
 }
 
-// Div divides the Vector by another Vector component-wise.
+// Div divides the Vector by another Vector component-wise, returning a new Vector.
 func (self Vector) Div(other Vector) Vector {
-	self.X /= other.X
-	self.Y /= other.Y
-	return self
+	return V(self.X/other.X, self.Y/other.Y)
 }
 
-// DivF divides the Vector by a scalar.
+// DivF divides the Vector by a scalar, returning a new Vector.
 func (self Vector) DivF(scalar float64) Vector {
 	return V(self.X/scalar, self.Y/scalar)
 }
 
-// Scale scales the Vector by another Vector component-wise.
+// Scale scales the Vector by another Vector component-wise, returning a new Vector.
 func (self Vector) Scale(other Vector) Vector {
-	self.X *= other.X
-	self.Y *= other.Y
-	return self
+	return V(self.X*other.X, self.Y*other.Y)
 }
 
-// ScaleF scales the Vector by a scalar.
+// ScaleF scales the Vector by a scalar, returning a new Vector.
 func (self Vector) ScaleF(scalar float64) Vector {
-	self.X *= scalar
-	self.Y *= scalar
-	return self
-}
-
-// Unit returns a unit vector in the same direction as this Vector.
-func (self Vector) Unit() Vector {
-	l := self.Length()
-	if l != 0 {
-		return self.DivF(l)
-	}
-	return self
+	return V(self.X*scalar, self.Y*scalar)
 }
 
 // Normalized returns a unit vector in the same direction as this Vector.
@@ -263,24 +230,22 @@ func (self Vector) Normalized() Vector {
 func (self Vector) ClampLength(limit float64) Vector {
 	l := self.Length()
 	if l > 0 && l > limit {
-		return self.Unit().ScaleF(limit)
+		return self.Normalized().MulF(limit)
 	}
 	return self
 }
 
-// AddMagnitude adds magnitude to the Vector in the direction it's already pointing.
+// AddLength adds magnitude to the Vector in the direction it's already pointing.
 func (vec Vector) AddLength(length float64) Vector {
-	return vec.Add(vec.Unit().ScaleF(length))
+	return vec.Add(vec.Normalized().MulF(length))
 }
 
 // SubLength subtracts the given magnitude from the Vector's existing magnitude.
-// If the vector's magnitude is less than the given magnitude to subtract, a zero-length Vector will be returned.
 func (vec Vector) SubLength(limit float64) Vector {
 	if vec.Length() > limit {
-		return vec.Sub(vec.Unit().ScaleF(limit))
+		return vec.Sub(vec.Normalized().MulF(limit))
 	}
 	return Vector{0, 0}
-
 }
 
 // Round returns a new Vector with each component rounded to the nearest integer.
@@ -310,6 +275,6 @@ func (self Vector) Equals(other Vector) bool {
 
 // Reflect reflects the vector against the given surface normal.
 func (vec Vector) Reflect(normal Vector) Vector {
-	n := normal.Unit()
-	return vec.Sub(n.ScaleF(2 * n.Dot(vec)))
+	n := normal.Normalized()
+	return vec.Sub(n.MulF(2 * n.Dot(vec)))
 }
