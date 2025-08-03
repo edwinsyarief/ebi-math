@@ -9,9 +9,7 @@ type Rectangle struct {
 	Angle float64
 }
 
-// Constructor for Rectangle
-// -------------------------
-// NewRectangle creates a new rectangle from two points.
+// NewRectangle creates a new axis-aligned rectangle.
 func NewRectangle(x1, y1, x2, y2 float64) Rectangle {
 	return Rectangle{
 		Min: V(x1, y1),
@@ -19,8 +17,11 @@ func NewRectangle(x1, y1, x2, y2 float64) Rectangle {
 	}
 }
 
-// Basic Properties
-// ----------------
+// SetAngle updates the rotation angle of the rectangle.
+func (r *Rectangle) SetAngle(angle float64) {
+	r.Angle = angle
+}
+
 // Width returns the width of the rectangle.
 func (r Rectangle) Width() float64 {
 	return r.Max.X - r.Min.X
@@ -36,15 +37,18 @@ func (r Rectangle) Center() Vector {
 	return V((r.Min.X+r.Max.X)/2, (r.Min.Y+r.Max.Y)/2)
 }
 
-// Accessors for coordinates
-// --------------------
+// X1 returns the min X coordinate.
 func (r Rectangle) X1() float64 { return r.Min.X }
+
+// Y1 returns the min Y coordinate.
 func (r Rectangle) Y1() float64 { return r.Min.Y }
+
+// X2 returns the max X coordinate.
 func (r Rectangle) X2() float64 { return r.Max.X }
+
+// Y2 returns the max Y coordinate.
 func (r Rectangle) Y2() float64 { return r.Max.Y }
 
-// State Checks
-// ------------
 // IsEmpty checks if the rectangle has no area.
 func (r Rectangle) IsEmpty() bool {
 	return r.Min.X >= r.Max.X || r.Min.Y >= r.Max.Y
@@ -55,8 +59,6 @@ func (r Rectangle) Equals(other Rectangle) bool {
 	return r.Min.Equals(other.Min) && r.Max.Equals(other.Max)
 }
 
-// Containment and Intersection
-// ---------------------------
 // Contains checks if a point is within the rectangle.
 func (r Rectangle) Contains(p Vector) bool {
 	return r.Min.X <= p.X && p.X < r.Max.X &&
@@ -71,19 +73,24 @@ func (r Rectangle) ContainsRect(other Rectangle) bool {
 		r.Y2() >= other.Y2()
 }
 
-// Intersects checks if two rectangles intersect, considering their rotation.
+// Intersects checks if two rectangles intersect using the Separating Axis Theorem.
+// This handles rotated rectangles.
 func (r Rectangle) Intersects(other Rectangle) bool {
+	// Optimization for axis-aligned rectangles.
 	if r.Angle == 0 && other.Angle == 0 {
 		return !r.IsEmpty() && !other.IsEmpty() &&
 			r.Min.X < other.Max.X && other.Min.X < r.Max.X &&
 			r.Min.Y < other.Max.Y && other.Min.Y < r.Max.Y
 	}
 
+	// Get the four axes to check for separation.
+	// The axes are the normalized perpendicular vectors to the sides of each rectangle.
 	axes := []Vector{
 		r.GetAxis(r.Angle, 0), r.GetAxis(r.Angle, 1),
 		other.GetAxis(other.Angle, 0), other.GetAxis(other.Angle, 1),
 	}
 
+	// If a separating axis is found, there is no intersection.
 	for _, axis := range axes {
 		if !r.OverlapOnAxis(other, axis) {
 			return false
@@ -101,8 +108,6 @@ func (r Rectangle) IntersectsCircle(center Vector, radius float64) bool {
 	return dx*dx+dy*dy <= radius*radius
 }
 
-// Helper methods for intersection calculation
-// -------------------------------------------
 // GetAxis returns one of the two axes of the rectangle based on its angle.
 func (r Rectangle) GetAxis(angle float64, index int) Vector {
 	if index == 0 {
