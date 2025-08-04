@@ -72,7 +72,7 @@ go get github.com/edwinsyarief/ebi-math
 
 ## Wiki
 
-For a more detailed documentation of all components and their usage, please visit the [wiki](./wiki).
+For a more detailed documentation of all components and their usage, please visit the [wiki](wiki).
 
 ## Contributing
 
