@@ -69,3 +69,21 @@ To use **ebi-math** in your Go project:
 ```sh
 go get github.com/edwinsyarief/ebi-math
 ```
+
+## Contributing
+
+Contributions are welcome! If you have a bug report, a feature request, or would like to contribute code, please follow these steps:
+
+1. Fork the repository.
+
+2. Create a new branch for your feature or bug fix (`git checkout -b feature/your-feature`).
+
+3. Commit your changes (`git commit -m 'feat: Add a new feature'`).
+
+4. Push to the branch (`git push origin feature/your-feature`).
+
+5. Open a Pull Request with a clear description of your changes.
+
+## License
+
+This project is licensed under the MIT License. For more details, see the [`LICENSE`](./LICENSE) file in this repository.
