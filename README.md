@@ -70,6 +70,10 @@ To use **ebi-math** in your Go project:
 go get github.com/edwinsyarief/ebi-math
 ```
 
+## Wiki
+
+For a more detailed documentation of all components and their usage, please visit the [wiki](./wiki).
+
 ## Contributing
 
 Contributions are welcome! If you have a bug report, a feature request, or would like to contribute code, please follow these steps:
