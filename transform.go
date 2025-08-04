@@ -7,6 +7,7 @@ type Transformer interface {
 }
 
 // Transform represents a transformation in 2D space.
+// It includes position, scale, rotation, and a parent for hierarchical transforms.
 type Transform struct {
 	position, scale, offset, origin Vector
 	rotation                        float64
@@ -18,6 +19,7 @@ type Transform struct {
 }
 
 // T creates a new Transform with default values.
+// The default scale is 1, and the dirty flag is set to true.
 func T() *Transform {
 	return &Transform{
 		scale:   V2(1),
@@ -33,6 +35,7 @@ func (self *Transform) GetParentTransform() *Transform {
 }
 
 // GetInitialParentTransform finds the topmost parent in the hierarchy.
+// It iterates up the parent chain until it finds the root transform.
 func (self *Transform) GetInitialParentTransform() *Transform {
 	for self.parent != nil {
 		self = self.parent
@@ -41,21 +44,26 @@ func (self *Transform) GetInitialParentTransform() *Transform {
 }
 
 // GetTransform returns this Transform.
+// This method fulfills the Transformer interface.
 func (self *Transform) GetTransform() *Transform {
 	return self
 }
 
 // Transformation Properties
 // -------------------------
+// Origin returns the origin of the transform.
 func (self *Transform) Origin() Vector {
 	return self.origin
 }
 
+// SetOrigin updates the transform's origin and marks it as dirty.
 func (self *Transform) SetOrigin(origin Vector) {
 	self.isDirty = true
 	self.origin = origin
 }
 
+// IsDirty checks if this transform or any of its parents are dirty.
+// This recursive check is used for cache invalidation.
 func (self *Transform) IsDirty() bool {
 	// A single, recursive check for dirty state.
 	if self.isDirty {
@@ -74,19 +82,23 @@ func (self *Transform) IsDirty() bool {
 func (self *Transform) SetPosition(position Vector) {
 	self.isDirty = true
 	if self.parent != nil {
+		// Calculate the local position by transforming the world position by the parent's inverse matrix.
 		worldToLocalMatrix := self.parent.Matrix()
 		worldToLocalMatrix.Invert()
 		self.position = position.Apply(worldToLocalMatrix)
 	} else {
+		// If there is no parent, the local position is the world position.
 		self.position = position
 	}
 }
 
 // Position returns the absolute position in world space.
+// It calculates the world position by applying the transform's world matrix to the zero vector.
 func (self *Transform) Position() Vector {
 	return V2(0).Apply(self.Matrix())
 }
 
+// Move translates the transform by the given vector(s).
 func (self *Transform) Move(v ...Vector) {
 	self.SetPosition(self.Position().Add(v...))
 }
@@ -98,8 +110,10 @@ func (self *Transform) Move(v ...Vector) {
 func (self *Transform) SetRotation(rotation float64) {
 	self.isDirty = true
 	if self.parent != nil {
+		// Calculate the local rotation by subtracting the parent's world rotation.
 		self.rotation = rotation - self.parent.Rotation()
 	} else {
+		// If there is no parent, the local rotation is the world rotation.
 		self.rotation = rotation
 	}
 }
@@ -112,6 +126,7 @@ func (self *Transform) Rotation() float64 {
 	return self.rotation + self.parent.Rotation()
 }
 
+// Rotate adds to the current rotation.
 func (self *Transform) Rotate(rotation float64) {
 	self.isDirty = true
 	self.rotation += rotation
@@ -119,11 +134,13 @@ func (self *Transform) Rotate(rotation float64) {
 
 // Scale
 // -----
+// SetScale updates the local scale.
 func (self *Transform) SetScale(scale Vector) {
 	self.isDirty = true
 	self.scale = scale
 }
 
+// Scale returns the absolute scale in world space by multiplying with the parent's scale.
 func (self *Transform) Scale() Vector {
 	if self.parent == nil {
 		return self.scale
@@ -131,6 +148,7 @@ func (self *Transform) Scale() Vector {
 	return self.scale.Mul(self.parent.Scale())
 }
 
+// AddScale adds to the current local scale.
 func (self *Transform) AddScale(add ...Vector) {
 	self.isDirty = true
 	self.scale = self.scale.Add(add...)
@@ -138,18 +156,21 @@ func (self *Transform) AddScale(add ...Vector) {
 
 // Offset
 // ------
+// SetOffset updates the local offset.
 func (self *Transform) SetOffset(offset Vector) {
 	self.isDirty = true
 	self.offset = offset
 }
 
+// Offset returns the local offset.
 func (self *Transform) Offset() Vector {
 	return self.offset
 }
 
 // Transform Modifiers
 // -------------------
-// Abs returns an absolute transform without considering parents.
+// Abs returns a new transform with the absolute world properties of this transform,
+// effectively disconnecting it from its parent hierarchy.
 func (self *Transform) Abs() Transform {
 	abs := *T()
 	abs.SetPosition(self.Position())
@@ -160,6 +181,7 @@ func (self *Transform) Abs() Transform {
 	return abs
 }
 
+// Rel returns a copy of the transform with its parent set to nil.
 func (self *Transform) Rel() Transform {
 	rel := *self
 	rel.parent = nil
@@ -168,6 +190,7 @@ func (self *Transform) Rel() Transform {
 
 // Parent Management
 // -----------------
+// Connected returns true if the transform has a parent.
 func (self *Transform) Connected() bool {
 	return self.parent != nil
 }
@@ -189,15 +212,19 @@ func (self *Transform) Connect(parent Transformer) {
 	if parent == nil {
 		return
 	}
+	// Store the current world properties before connecting to the parent.
 	worldPos := self.Position()
 	worldRot := self.Rotation()
 	worldScale := self.Scale()
 	worldOffset := self.Offset()
 	worldOrigin := self.Origin()
 
+	// Set the new parent and mark the transform as dirty.
 	self.parent = parent.GetTransform()
 	self.isDirty = true
 
+	// Re-apply the stored world properties, which will internally
+	// calculate the new local properties based on the new parent.
 	self.SetPosition(worldPos)
 	self.SetRotation(worldRot)
 	self.SetScale(worldScale)
@@ -206,6 +233,7 @@ func (self *Transform) Connect(parent Transformer) {
 }
 
 // Disconnect removes the parent relationship, making the transform absolute.
+// It does this by creating a new absolute transform and overwriting the current one.
 func (self *Transform) Disconnect() {
 	if self.parent == nil {
 		return
@@ -217,6 +245,7 @@ func (self *Transform) Disconnect() {
 // -----------------
 // MatrixForParenting returns matrices for child positioning.
 // It returns the world matrix without the origin offset and its inverse.
+// It ensures the world matrix is up-to-date by calling Matrix() if needed.
 func (self *Transform) MatrixForParenting() (Matrix, Matrix) {
 	if self.isDirty {
 		self.Matrix() // Ensure the world matrix is computed and cached.
