@@ -261,8 +261,26 @@ func (self *Transform) Matrix() Matrix {
 	}
 
 	// Calculate the local transformation matrix.
-	localMatrix := Matrix{}
+	localMatrix := Matrix{} // Scale first.
 	localMatrix.Scale(self.scale.X, self.scale.Y)
+	// Then move and rotate.
+	localMatrix.Translate(
+		-self.offset.X*self.scale.X,
+		-self.offset.Y*self.scale.Y,
+	)
+	localMatrix.Rotate(float64(self.rotation))
+	// Move to the absolute position.
+	localMatrix.Translate(self.position.X, self.position.Y)
+	// Save this local matrix as the parent matrix for children, without the origin offset.
+	self.parentMatrix = localMatrix
+	self.parentInverted = localMatrix
+	self.parentInverted.Invert()
+	// And finally move to the origin offset
+	if !self.origin.IsZero() {
+		localMatrix.Translate(-self.origin.X, -self.origin.Y)
+	}
+
+	/* localMatrix.Scale(self.scale.X, self.scale.Y)
 	localMatrix.Rotate(self.rotation)
 	localMatrix.Translate(self.position.X, self.position.Y)
 
@@ -278,7 +296,7 @@ func (self *Transform) Matrix() Matrix {
 	}
 	if !self.offset.IsZero() {
 		localMatrix.Translate(-self.offset.X*self.scale.X, -self.offset.Y*self.scale.Y)
-	}
+	} */
 
 	// If there's a parent, combine this local matrix with the parent's world matrix.
 	if self.parent != nil {
