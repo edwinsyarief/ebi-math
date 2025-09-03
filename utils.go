@@ -1,7 +1,6 @@
 package ebimath
 
 import (
-	"cmp"
 	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -20,20 +19,28 @@ const (
 	radToDeg = 180.0 / math.Pi
 )
 
+type Number interface {
+	Float | ~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+type Float interface {
+	~float32 | ~float64
+}
+
 // Utility Functions for Floating Point Comparisons
 // ------------------------------------------------
 // EqualsApproximately checks if two numbers of a generic float type are approximately equal.
-func EqualsApproximately[T float32 | float64](a, b T) bool {
+func EqualsApproximately[T Float](a, b T) bool {
 	// Check for exact equality first, required to handle "infinity" values.
 	if a == b {
 		return true
 	}
 	// Then check for approximate equality.
-	tolerance := Epsilon * Abs(float64(a))
+	tolerance := Epsilon * Abs(T(a))
 	if tolerance < Epsilon {
 		tolerance = Epsilon
 	}
-	return Abs(float64(a-b)) < tolerance
+	return Abs(T(a-b)) < tolerance
 }
 
 // Math Utilities
@@ -67,14 +74,14 @@ func ToRadians(degrees float64) float64 {
 // Linear Interpolation
 // --------------------
 // Lerp performs linear interpolation.
-func Lerp[T float64 | float32 | int | int16 | int32 | int64](from, to, t T) T {
+func Lerp[T Number](from, to, t T) T {
 	return from + ((to - from) * t)
 }
 
 // Clamping and Rounding
 // ---------------------
 // Clamp restricts a value to be within specified bounds.
-func Clamp[T cmp.Ordered](value, min, max T) T {
+func Clamp[T Number](value, min, max T) T {
 	if value <= min {
 		return min
 	}
@@ -85,12 +92,12 @@ func Clamp[T cmp.Ordered](value, min, max T) T {
 }
 
 // FastFloor performs a fast floor operation for floating-point numbers.
-func FastFloor[T float64 | float32, U float64 | float32 | int](value T) U {
+func FastFloor[T Float, U Number](value T) U {
 	return U((value + 32768.0) - 32768)
 }
 
 // ClampTowardsZero clamps a value towards zero based on another value's sign.
-func ClampTowardsZero[T float64 | float32 | int | int16 | int32 | int64](value, clampReference T) T {
+func ClampTowardsZero[T Number](value, clampReference T) T {
 	if clampReference > 0 {
 		return min(value, clampReference)
 	}
@@ -100,7 +107,7 @@ func ClampTowardsZero[T float64 | float32 | int | int16 | int32 | int64](value, 
 // Absolute and Sign Functions
 // ---------------------------
 // Abs returns the absolute value.
-func Abs[T float64 | float32 | int | int8 | int16 | int32 | int64](value T) T {
+func Abs[T Number](value T) T {
 	if value >= 0 {
 		return value
 	}
@@ -108,7 +115,7 @@ func Abs[T float64 | float32 | int | int8 | int16 | int32 | int64](value T) T {
 }
 
 // Sign returns +1 for positive numbers, -1 for negative numbers, ignoring zero.
-func Sign[T float64 | float32 | int | int8 | int16 | int32 | int64](value T) T {
+func Sign[T Number](value T) T {
 	if value >= 0 {
 		return +1
 	}
@@ -117,16 +124,16 @@ func Sign[T float64 | float32 | int | int8 | int16 | int32 | int64](value T) T {
 
 // Min and Max Functions
 // ---------------------
-// Max returns the larger of two float64 values.
-func Max(v1, v2 float64) float64 {
+// Max returns the larger of two values.
+func Max[T Number](v1, v2 T) T {
 	if v1 > v2 {
 		return v1
 	}
 	return v2
 }
 
-// Min returns the smaller of two float64 values.
-func Min(v1, v2 float64) float64 {
+// Min returns the smaller of two values.
+func Min[T Number](v1, v2 T) T {
 	if v1 < v2 {
 		return v1
 	}
