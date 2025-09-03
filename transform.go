@@ -145,7 +145,7 @@ func (self *Transform) Scale() Vector {
 	if self.parent == nil {
 		return self.scale
 	}
-	return self.scale.Mul(self.parent.Scale())
+	return self.scale.Scale(self.parent.Scale())
 }
 
 // AddScale adds to the current local scale.

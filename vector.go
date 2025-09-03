@@ -16,11 +16,11 @@ var (
 	// Right represents a unit vector pointing to the right (1, 0).
 	Right = V(1, 0)
 	// Left represents a unit vector pointing to the left (-1, 0).
-	Left = Right.Invert()
+	Left = Right.Negate()
 	// Up represents a unit vector pointing up (0, 1).
 	Up = V(0, 1)
 	// Down represents a unit vector pointing down (0, -1).
-	Down = Up.Invert()
+	Down = Up.Negate()
 )
 
 // V creates a new Vector with given x and y coordinates.
@@ -133,13 +133,13 @@ func (self Vector) AngleToPoint(other Vector) float64 {
 
 // DirectionTo returns a normalized vector pointing from this Vector to another.
 func (self Vector) DirectionTo(other Vector) Vector {
-	return self.Sub(other).Normalized()
+	return other.Sub(self).Normalize()
 }
 
 // VecTowards calculates a Vector of given length towards another point.
 func (self Vector) VecTowards(other Vector, length float64) Vector {
 	angle := self.AngleToPoint(other)
-	return V(math.Cos(angle), math.Sin(angle)).MulF(length)
+	return V(math.Cos(angle), math.Sin(angle)).ScaleF(length)
 }
 
 // MoveTowards moves the Vector towards another Vector by a maximum distance.
@@ -149,11 +149,11 @@ func (self Vector) MoveTowards(other Vector, length float64) Vector {
 	if dist <= length || dist < Epsilon {
 		return other
 	}
-	return self.Add(direction.DivF(dist).MulF(length))
+	return self.Add(direction.DivF(dist).ScaleF(length))
 }
 
-// Invert returns a new Vector with both components negated.
-func (self Vector) Invert() Vector {
+// Negate returns a new Vector with both components negated.
+func (self Vector) Negate() Vector {
 	return V(-self.X, -self.Y)
 }
 
@@ -187,16 +187,6 @@ func (self Vector) SubF(scalar float64) Vector {
 	return V(self.X-scalar, self.Y-scalar)
 }
 
-// Mul multiplies the Vector by another Vector component-wise, returning a new Vector.
-func (self Vector) Mul(other Vector) Vector {
-	return V(self.X*other.X, self.Y*other.Y)
-}
-
-// MulF multiplies the Vector by a scalar, returning a new Vector.
-func (self Vector) MulF(scalar float64) Vector {
-	return V(self.X*scalar, self.Y*scalar)
-}
-
 // Div divides the Vector by another Vector component-wise, returning a new Vector.
 func (self Vector) Div(other Vector) Vector {
 	return V(self.X/other.X, self.Y/other.Y)
@@ -217,11 +207,11 @@ func (self Vector) ScaleF(scalar float64) Vector {
 	return V(self.X*scalar, self.Y*scalar)
 }
 
-// Normalized returns a unit vector in the same direction as this Vector.
-func (self Vector) Normalized() Vector {
+// Normalize returns a unit vector in the same direction as this Vector.
+func (self Vector) Normalize() Vector {
 	l := self.LengthSquared()
 	if l != 0 {
-		return self.MulF(1 / math.Sqrt(l))
+		return self.ScaleF(1 / math.Sqrt(l))
 	}
 	return self
 }
@@ -230,20 +220,20 @@ func (self Vector) Normalized() Vector {
 func (self Vector) ClampLength(limit float64) Vector {
 	l := self.Length()
 	if l > 0 && l > limit {
-		return self.Normalized().MulF(limit)
+		return self.Normalize().ScaleF(limit)
 	}
 	return self
 }
 
-// AddLength adds magnitude to the Vector in the direction it's already pointing.
-func (vec Vector) AddLength(length float64) Vector {
-	return vec.Add(vec.Normalized().MulF(length))
+// Extend adds magnitude to the Vector in the direction it's already pointing.
+func (vec Vector) Extend(length float64) Vector {
+	return vec.Add(vec.Normalize().ScaleF(length))
 }
 
-// SubLength subtracts the given magnitude from the Vector's existing magnitude.
-func (vec Vector) SubLength(limit float64) Vector {
+// Shorten subtracts the given magnitude from the Vector's existing magnitude.
+func (vec Vector) Shorten(limit float64) Vector {
 	if vec.Length() > limit {
-		return vec.Sub(vec.Normalized().MulF(limit))
+		return vec.Sub(vec.Normalize().ScaleF(limit))
 	}
 	return Vector{0, 0}
 }
@@ -265,7 +255,7 @@ func (self Vector) Ceil() Vector {
 
 // MoveInDirection moves the Vector in the direction of the angle by a given distance.
 func (self Vector) MoveInDirection(angle, distance float64) Vector {
-	return self.Add(V(math.Cos(angle), math.Sin(angle)).MulF(distance))
+	return self.Add(V(math.Cos(angle), math.Sin(angle)).ScaleF(distance))
 }
 
 // Equals checks if two Vectors are equal within a small tolerance.
@@ -275,6 +265,6 @@ func (self Vector) Equals(other Vector) bool {
 
 // Reflect reflects the vector against the given surface normal.
 func (vec Vector) Reflect(normal Vector) Vector {
-	n := normal.Normalized()
-	return vec.Sub(n.MulF(2 * n.Dot(vec)))
+	n := normal.Normalize()
+	return vec.Sub(n.ScaleF(2 * n.Dot(vec)))
 }
