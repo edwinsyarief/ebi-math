@@ -5,29 +5,29 @@ import (
 	"sort"
 	"time"
 
-	"golang.org/x/exp/rand"
+	"math/rand/v2"
 )
 
 // Rand provides methods for generating random numbers with various distributions.
 type Rand struct {
-	rng *rand.Rand
+	rnd *rand.Rand
 }
 
 // Random creates a new random number generator with the current time as seed.
 func Random() *Rand {
-	return RandomWidthSeed(time.Now().UnixNano())
+	return RandomWidthSeed(time.Now().UnixNano(), time.Now().UnixNano())
 }
 
 // RandomWidthSeed initializes a random number generator with a specific seed.
-func RandomWidthSeed(seed int64) *Rand {
+func RandomWidthSeed(seed1, seed2 int64) *Rand {
 	return &Rand{
-		rng: rand.New(rand.NewSource(uint64(seed))),
+		rnd: rand.New(rand.NewPCG(uint64(seed1), uint64(seed2))),
 	}
 }
 
 // SetSeed sets the seed for the random number generator, allowing for reproducible randomness.
 func (self *Rand) SetSeed(seed int64) {
-	self.rng = rand.New(rand.NewSource(uint64(seed)))
+	self.rnd = rand.New(rand.NewPCG(uint64(seed), uint64(seed)))
 }
 
 // Offset generates a random Vector within the given range for both X and Y components.
@@ -37,47 +37,47 @@ func (self *Rand) Offset(min, max float64) Vector {
 
 // Chance returns true with the given probability, false otherwise.
 func (self *Rand) Chance(probability float64) bool {
-	return self.rng.Float64() <= probability
+	return self.rnd.Float64() <= probability
 }
 
 // Bool returns a random boolean value where true has a 50% chance.
 func (self *Rand) Bool() bool {
-	return self.rng.Float64() < 0.5
+	return self.rnd.Float64() < 0.5
 }
 
 // IntRange generates a random integer within the range [min, max].
 func (self *Rand) IntRange(min, max int) int {
-	return min + self.rng.Intn(max-min+1)
+	return min + self.rnd.IntN(max-min+1)
 }
 
 // PositiveInt64 returns a non-negative random int64.
 func (self *Rand) PositiveInt64() int64 {
-	return self.rng.Int63()
+	return self.rnd.Int64()
 }
 
 // PositiveInt returns a non-negative random int.
 func (self *Rand) PositiveInt() int {
-	return self.rng.Int()
+	return self.rnd.Int()
 }
 
 // Uint64 returns a random uint64 value.
 func (self *Rand) Uint64() uint64 {
-	return self.rng.Uint64()
+	return self.rnd.Uint64()
 }
 
 // Float64 returns a random float64 in the range [0.0, 1.0).
 func (self *Rand) Float64() float64 {
-	return self.rng.Float64()
+	return self.rnd.Float64()
 }
 
 // NextFloat64 returns a random float64 in the range [0.0, max).
 func (self *Rand) NextFloat64(max float64) float64 {
-	return self.rng.Float64() * max
+	return self.rnd.Float64() * max
 }
 
 // FloatRange returns a random float64 within the specified range [min, max).
 func (self *Rand) FloatRange(min, max float64) float64 {
-	return min + self.rng.Float64()*(max-min)
+	return min + self.rnd.Float64()*(max-min)
 }
 
 // Rad returns a random angle in radians within the range [0, 2π).
@@ -116,7 +116,7 @@ func RandomChoose[T any](r *Rand, elements ...T) (element T) {
 
 // RandomShuffle shuffles the elements of the slice in place.
 func RandomShuffle[T any](r *Rand, slice []T) {
-	r.rng.Shuffle(len(slice), func(i, j int) {
+	r.rnd.Shuffle(len(slice), func(i, j int) {
 		slice[i], slice[j] = slice[j], slice[i]
 	})
 }

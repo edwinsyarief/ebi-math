@@ -14,8 +14,10 @@ type Matrix = ebiten.GeoM
 // Constants
 // ---------
 const (
-	Pi      = 3.141592653589793
-	Epsilon = 1e-9
+	Pi       = 3.141592653589793
+	Epsilon  = 1e-9
+	degToRad = math.Pi / 180.0
+	radToDeg = 180.0 / math.Pi
 )
 
 // Utility Functions for Floating Point Comparisons
@@ -54,12 +56,12 @@ func CubicInterpolate(from, to, pre, post, t float64) float64 {
 // ----------------
 // ToDegrees converts radians to degrees.
 func ToDegrees(radians float64) float64 {
-	return radians / math.Pi * 180
+	return radians * radToDeg
 }
 
 // ToRadians converts degrees to radians.
 func ToRadians(degrees float64) float64 {
-	return math.Pi * degrees / 180
+	return degrees * degToRad
 }
 
 // Linear Interpolation
