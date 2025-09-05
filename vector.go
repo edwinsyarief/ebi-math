@@ -226,14 +226,14 @@ func (self Vector) ClampLength(limit float64) Vector {
 }
 
 // Extend adds magnitude to the Vector in the direction it's already pointing.
-func (vec Vector) Extend(length float64) Vector {
-	return vec.Add(vec.Normalize().ScaleF(length))
+func (self Vector) Extend(length float64) Vector {
+	return self.Add(self.Normalize().ScaleF(length))
 }
 
 // Shorten subtracts the given magnitude from the Vector's existing magnitude.
-func (vec Vector) Shorten(limit float64) Vector {
-	if vec.Length() > limit {
-		return vec.Sub(vec.Normalize().ScaleF(limit))
+func (self Vector) Shorten(limit float64) Vector {
+	if self.Length() > limit {
+		return self.Sub(self.Normalize().ScaleF(limit))
 	}
 	return Vector{0, 0}
 }
@@ -264,7 +264,15 @@ func (self Vector) Equals(other Vector) bool {
 }
 
 // Reflect reflects the vector against the given surface normal.
-func (vec Vector) Reflect(normal Vector) Vector {
+func (self Vector) Reflect(normal Vector) Vector {
 	n := normal.Normalize()
-	return vec.Sub(n.ScaleF(2 * n.Dot(vec)))
+	return self.Sub(n.ScaleF(2 * n.Dot(self)))
+}
+
+func (self Vector) Orthogonal() Vector {
+	return V(-self.Y, self.X)
+}
+
+func (self Vector) Cross(other Vector) float64 {
+	return self.X*other.Y - self.Y*other.X
 }
