@@ -216,6 +216,13 @@ func (self Vector) Normalize() Vector {
 	return self
 }
 
+// Lerp performs linear interpolation between two vectors.
+// t is the interpolation factor, typically between 0 and 1.
+func (v Vector) Lerp(other Vector, t float64) Vector {
+	// The formula is: v + (other - v) * t
+	return v.Add(other.Sub(v).ScaleF(t))
+}
+
 // ClampLength ensures the Vector's length does not exceed a given limit.
 func (self Vector) ClampLength(limit float64) Vector {
 	l := self.Length()
