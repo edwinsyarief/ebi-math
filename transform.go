@@ -95,7 +95,7 @@ func (self *Transform) SetPosition(position Vector) {
 // Position returns the absolute position in world space.
 // It calculates the world position by applying the transform's world matrix to the zero vector.
 func (self *Transform) Position() Vector {
-	return V2(0).Apply(self.Matrix())
+	return self.position
 }
 
 // Move translates the transform by the given vector(s).
@@ -279,24 +279,6 @@ func (self *Transform) Matrix() Matrix {
 	if !self.origin.IsZero() {
 		localMatrix.Translate(-self.origin.X, -self.origin.Y)
 	}
-
-	/* localMatrix.Scale(self.scale.X, self.scale.Y)
-	localMatrix.Rotate(self.rotation)
-	localMatrix.Translate(self.position.X, self.position.Y)
-
-	// Save this local matrix as the parent matrix for children, without the origin offset.
-	self.parentMatrix = localMatrix
-	self.parentInverted = localMatrix
-	self.parentInverted.Invert()
-
-	// Apply origin and offset translations last, as they should be relative to
-	// the object's local space.
-	if !self.origin.IsZero() {
-		localMatrix.Translate(-self.origin.X, -self.origin.Y)
-	}
-	if !self.offset.IsZero() {
-		localMatrix.Translate(-self.offset.X*self.scale.X, -self.offset.Y*self.scale.Y)
-	} */
 
 	// If there's a parent, combine this local matrix with the parent's world matrix.
 	if self.parent != nil {
